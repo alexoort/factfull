@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Factful Representation</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+        }
+        .chart-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: nowrap;
+            width: 100%;
+            height: auto;
+            margin: auto;
+        }
+        .chart-wrapper {
+            flex: 1;
+            max-width: 48%; /* Limit the width of each chart */
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .chart {
+            width: 100%;
+            height: auto; /* Ensure the canvas scales proportionally */
+        }
+        .content {
+            padding: 20px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Adjust the size of the squares */
+            gap: 100px; /* Adjust the spacing between squares */
+            width: 100%;
+            max-width: 2000px; /* Adjust the max width */
+            margin: 2px auto;
+            border-width: 2px;
+            border-color: red;
+        }
+        .grid-item {
+            width: 100px;  /* New size */
+            height: 100px; /* New size */
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container content">
+        <h1 class="my-4 text-center">A Factful Representation of The Conflict in Gaza</h1>
+        <p class="text-center">Data from the <a href="https://www.ochaopt.org/">UN Office for the Coordination of Humanitarian Affairs (OCHA)</a></p>
+        
+        
+        <div><p class="text-center"><i>Scroll down</i></p></div>
+        <br><br>
+        <div id="grid" class="grid-container"></div>
+    </div>
+
+    <p class="text-center">Too many people have died in this conflict. Too many people have been displaced.</p>
+        <p class="text-center">Ceasefire Now.</p>
+
+        <div class="row my-4">
+            <div class="col-md-12">
+                <h2 class="text-center">Damage and IDPs</h2>
+                <p><strong>Housing Units Destroyed in Gaza:</strong> {{ ochadata.Damages['Housing units destroyed in Gaza'] }}</p>
+                <p><strong>Displaced in Gaza:</strong> {{ ochadata.Damages['Displaced in Gaza'] }}</p>
+            </div>
+        </div>
+        <div class="row my-4">
+            <div class="col-md-12">
+                <h2 class="text-center">Visualizations</h2>
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <canvas id="palestinianChart" class="chart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="israeliChart" class="chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var palestinianCtx = document.getElementById('palestinianChart').getContext('2d');
+            var israeliCtx = document.getElementById('israeliChart').getContext('2d');
+
+            var totalCasualties = 
+                {{ ochadata.Palestinians['Reported killed'].replace(',', '').replace('+', '') }} +
+                {{ ochadata.Palestinians['Reported injured'].replace(',', '').replace('+', '') }} +
+                {{ ochadata.Israelis['Reported killed'].replace(',', '').replace('+', '') }} +
+                {{ ochadata.Israelis['Reported injured'].replace(',', '').replace('+', '') }};
+            
+            var palestinianDeaths = {{ ochadata.Palestinians['Reported killed'].replace(',', '').replace('+', '') }};
+
+            // Define options for both charts to ensure the x-axis scale is synchronized
+            var chartOptions = {
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: totalCasualties
+                    }
+                }
+            };
+
+            var palestinianChart = new Chart(palestinianCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Reported Killed', 'Reported Injured'],
+                    datasets: [{
+                        label: 'Palestinians',
+                        data: [
+                            {{ ochadata.Palestinians['Reported killed'].replace(',', '').replace('+', '') }},
+                            {{ ochadata.Palestinians['Reported injured'].replace(',', '').replace('+', '') }}
+                        ],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        x: {
+                            ...chartOptions.scales.x,
+                            reverse: true // Reverse the x-axis for the mirrored effect
+                        }
+                    }
+                }
+            });
+
+            var israeliChart = new Chart(israeliCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Reported Killed', 'Reported Injured'],
+                    datasets: [{
+                        label: 'Israelis',
+                        data: [
+                            {{ ochadata.Israelis['Reported killed'].replace(',', '').replace('+', '') }},
+                            {{ ochadata.Israelis['Reported injured'].replace(',', '').replace('+', '') }}
+                        ],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: chartOptions
+            });
+
+            // JavaScript to create the grid of squares
+            const gridContainer = document.getElementById('grid');
+            for (let i = 0; i < palestinianDeaths; i++) {
+                const square = document.createElement('div');
+                square.classList.add('grid-item');
+                gridContainer.appendChild(square);
+            }
+        });
+    </script>
+</body>
+</html>
